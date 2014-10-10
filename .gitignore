@@ -15,3 +15,6 @@
 
 #Unity3D Generated File On Crash Reports
 sysinfo.txt
+CMakeCache.txt
+cmake_install.cmake
+CMakeFiles/*
