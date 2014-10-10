@@ -94,18 +94,48 @@ int main(int argc, char** argv )
     }
 
     vector<Point3f> spherePoint1, spherePoint2;
-    for(unsigned i = 0; i < inliers1.size(); i++) {
+   for(unsigned i = 0; i < inliers1.size(); i++) {
         Point3f pnt1 = getSpherePoint( inliers1[i].pt );
         Point3f pnt2 = getSpherePoint( inliers2[i].pt );
         cout << pnt1 << ":" << pnt2 << "\n";
         spherePoint1.push_back( pnt1 );
         spherePoint2.push_back( pnt2 );
     }
+/*
+0.9559639913966587, -0.1512785456133775, 0.008659000430174126, -0.03115525448941475;
+ 0.1213505258011772, 0.9521654706553296, 0.1884811247447123, -0.02286234084694982;
+ -0.02882466337354708, -0.191771707675626, 0.9698523604117755, 0.003293610165961219
+     mat.m00 = 0.9559639913966587f;
+     mat.m01 =  0.1213505258011772f;
+     mat.m02 =  -0.02882466337354708f;
+		mat.m03 = 0.0f;
+		mat.m10 = -0.1512785456133775f;
+		mat.m11 = 0.9521654706553296f;
+		mat.m12 = -0.191771707675626f;
+		mat.m13 = 0.0f;
+		mat.m20 = 0.008659000430174126;
+		mat.m21 = 0.1884811247447123;
+		mat.m22 = 0.9698523604117755;
+		mat.m23 = 0.0f;
+		mat.m30 =  -0.03115525448941475f;
+		mat.m31 =  -0.02286234084694982f;
+		mat.m32 =  0.00329361016596121f;
+		mat.m33 = 1.0f;
+*/
+//    spherePoint1.push_back( Point3f( 0.7071067, 0, 0.7071067 ) );
+//    spherePoint2.push_back( Point3f( 0, 0, 1 ) );
+//    spherePoint1.push_back( Point3f( 0, 0, 1 ) );
+//    spherePoint2.push_back( Point3f( -0.7071067, 0, 0.7071067 ) );
+//    spherePoint1.push_back( Point3f( -1, 0, 0 ) );
+//    spherePoint2.push_back( Point3f( -0.7071067, 0, -0.7071067 ) );
+//    spherePoint1.push_back( Point3f( -0.7071067, 0, -0.7071067 ) );
+//    spherePoint2.push_back( Point3f( 0, 0, -1 ) );
 
     Mat estimateMat;
     vector<uchar> outliers;
-    estimateAffine3D( spherePoint1, spherePoint2, estimateMat, outliers);
+    estimateAffine3D( spherePoint1, spherePoint2, estimateMat, outliers, 2.0, 0.8 );
     cout << estimateMat << "\n";
+    cout << outliers.size()  << "\n";
 
     Mat res;
     drawMatches(img1, inliers1, img2, inliers2, good_matches, res);
