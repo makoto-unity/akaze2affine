@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.8)
+project( test_akaze_match )
+find_package( OpenCV REQUIRED )
+add_executable( test_akaze_match test_akaze_match.cpp )
+target_link_libraries( test_akaze_match ${OpenCV_LIBS} )
