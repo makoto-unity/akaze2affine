@@ -10,6 +10,19 @@ using namespace cv;
 
 static float inlier_threshold = 2.5f; // Distance threshold to identify inliers
 const float nn_match_ratio = 0.8f;   // Nearest neighbor matching ratio
+static int w;
+static int h;
+
+static Point3f getSpherePoint( Point2f pt )
+{
+    Point3f pnt1;
+    double theta = pt.x / (double)w * M_PI * 2.0f;
+    double phai  = pt.y / (double)h * M_PI;
+    pnt1.x = sin( phai ) * cos( theta );
+    pnt1.y = cos( phai );
+    pnt1.z = sin( phai ) * sin( theta );
+    return pnt1;
+}
 
 int main(int argc, char** argv )
 {
@@ -31,8 +44,8 @@ int main(int argc, char** argv )
 //    Mat img2 = imread("graf3.png", IMREAD_GRAYSCALE);
 
     cv::Size imgSz = img1.size();
-    int w = imgSz.width;
-    int h = imgSz.height;
+    w = imgSz.width;
+    h = imgSz.height;
 
     Mat homography;
     FileStorage fs("H1to3p.xml", FileStorage::READ);
@@ -82,14 +95,17 @@ int main(int argc, char** argv )
 
     vector<Point3f> spherePoint1, spherePoint2;
     for(unsigned i = 0; i < inliers1.size(); i++) {
-        Point3f pnt;
-        double theta = inliers1[i].pt.x / (double)w * 360.0;
-        double phai  = inliers1[i].pt.y / (double)h * 180.0;
-        pnt.x = sin( phai ) * cos( theta );
-        pnt.y = cos( phai );
-        pnt.z = sin( phai ) * sin( theta );
-        cout << pnt <<  "\n";
+        Point3f pnt1 = getSpherePoint( inliers1[i].pt );
+        Point3f pnt2 = getSpherePoint( inliers2[i].pt );
+        cout << pnt1 << ":" << pnt2 << "\n";
+        spherePoint1.push_back( pnt1 );
+        spherePoint2.push_back( pnt2 );
     }
+
+    Mat estimateMat;
+    vector<uchar> outliers;
+    estimateAffine3D( spherePoint1, spherePoint2, estimateMat, outliers);
+    cout << estimateMat << "\n";
 
     Mat res;
     drawMatches(img1, inliers1, img2, inliers2, good_matches, res);
