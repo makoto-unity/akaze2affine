@@ -18,3 +18,4 @@ sysinfo.txt
 CMakeCache.txt
 cmake_install.cmake
 CMakeFiles/*
+test_akaze_match
