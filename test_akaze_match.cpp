@@ -34,19 +34,23 @@ static Point3f getSpherePoint( Point2f pt )
 // 行列成分はDirectX形式（行方向が軸の向き）です
 // OpenGL形式（列方向が軸の向き）の場合は
 // 転置した値を入れて下さい。
-
+/*
 static bool transformRotMatToQuaternion(
-    float &qx, float &qy, float &qz, float &qw,
-    float m11, float m21, float m31,
-    float m12, float m22, float m32,
-    float m13, float m23, float m33
+    double &qx, double &qy, double &qz, double &qw,
+    Mat &m
 ) {
+//    cout << m.at<double>(0,0) << " , " << m.at<double>(0,1) << " , " << m.at<double>(0,2) <<  endl;
+//    cout << m.at<double>(1,0) << " , " << m.at<double>(1,1) << " , " << m.at<double>(1,2) <<  endl;
+//    cout << m.at<double>(2,0) << " , " << m.at<double>(2,1) << " , " << m.at<double>(2,2) <<  endl;
+    double m11 = m.at<double>(0,0); double m12 = m.at<double>(0,1); double m13 = m.at<double>(0,2);
+    double m21 = m.at<double>(1,0); double m22 = m.at<double>(1,1); double m23 = m.at<double>(1,2);
+    double m31 = m.at<double>(2,0); double m32 = m.at<double>(2,1); double m33 = m.at<double>(2,2);
     // 最大成分を検索
-    float elem[ 4 ]; // 0:x, 1:y, 2:z, 3:w
-    elem[ 0 ] = m11 - m22 - m33 + 1.0f;
-    elem[ 1 ] = -m11 + m22 - m33 + 1.0f;
-    elem[ 2 ] = -m11 - m22 + m33 + 1.0f;
-    elem[ 3 ] = m11 + m22 + m33 + 1.0f;
+    double elem[ 4 ]; // 0:x, 1:y, 2:z, 3:w
+    elem[ 0 ] = m11 - m22 - m33 + 1.0;
+    elem[ 1 ] = -m11 + m22 - m33 + 1.0;
+    elem[ 2 ] = -m11 - m22 + m33 + 1.0;
+    elem[ 3 ] = m11 + m22 + m33 + 1.0;
 
     unsigned biggestIndex = 0;
     for ( int i = 1; i < 4; i++ ) {
@@ -54,14 +58,14 @@ static bool transformRotMatToQuaternion(
             biggestIndex = i;
     }
 
-    if ( elem[biggestIndex] < 0.0f )
+    if ( elem[biggestIndex] < 0.0 )
         return false; // 引数の行列に間違いあり！
 
     // 最大要素の値を算出
-    float *q[4] = {&qx, &qy, &qz, &qw};
-    float v = sqrtf( elem[biggestIndex] ) * 0.5f;
+    double *q[4] = {&qx, &qy, &qz, &qw};
+    double v = sqrtf( elem[biggestIndex] ) * 0.5;
     *q[biggestIndex] = v;
-    float mult = 0.25f / v;
+    double mult = 0.25 / v;
 
     switch ( biggestIndex ) {
     case 0: // x
@@ -86,6 +90,30 @@ static bool transformRotMatToQuaternion(
         break;
     }
 
+    return true;
+}
+*/
+
+static bool transformRotMatToQuaternion(
+    double &qx, double &qy, double &qz, double &qw,
+    Mat &m
+    )
+{
+    double m11 = m.at<double>(0,0); double m12 = m.at<double>(1,0); double m13 = m.at<double>(2,0);
+    double m21 = m.at<double>(0,1); double m22 = m.at<double>(1,1); double m23 = m.at<double>(2,1);
+    double m31 = m.at<double>(0,2); double m32 = m.at<double>(1,2); double m33 = m.at<double>(2,2);
+    double T = 1 + m11 + m22 + m33;
+		
+    if ( T > 0.00000001 ){
+        double S = sqrt(T) * 2.0;
+        qx = ( m32 - m23 ) / S;
+        qy = ( m13 - m31 ) / S;
+        qz = ( m21 - m12 ) / S;
+        qw = 0.25 * S;
+    }else{
+        return false;
+    }
+		
     return true;
 }
 
@@ -121,8 +149,23 @@ int main(int argc, char** argv )
     FileStorage fs("H1to3p.xml", FileStorage::READ);
     fs.getFirstTopLevelNode() >> homography;
 
-    //while (waitKey(1) == -1) 
-    for( int i=0 ; i<10 ; i++ ) 
+    int counter = 1;
+
+    /*
+    for( int i=0 ; i<818 ; i++ ) 
+    {
+        // 現在のフレームを保存
+		Mat curr;
+		capture >> curr;
+        prev = curr;
+        counter++;
+     }
+*/
+
+    cout << "0,0,0,0,1" << endl;
+
+    while (waitKey(1) == -1) 
+    //for( int i=0 ; i<10 ; i++ ) 
     {
         // 現在のフレームを保存
 		Mat curr;
@@ -174,7 +217,6 @@ int main(int argc, char** argv )
         for(unsigned i = 0; i < inliers1.size(); i++) {
             Point3f pnt1 = getSpherePoint( inliers1[i].pt );
             Point3f pnt2 = getSpherePoint( inliers2[i].pt );
-//            cout << pnt1 << ":" << pnt2 << "\n";
             spherePoint1.push_back( pnt1 );
             spherePoint2.push_back( pnt2 );
         }
@@ -199,37 +241,47 @@ int main(int argc, char** argv )
   mat.m32 =  0.00329361016596121f;
   mat.m33 = 1.0f;
 */
-//    spherePoint1.push_back( Point3f( 0.7071067, 0, 0.7071067 ) );
-//    spherePoint2.push_back( Point3f( 0, 0, 1 ) );
-//    spherePoint1.push_back( Point3f( 0, 0, 1 ) );
-//    spherePoint2.push_back( Point3f( -0.7071067, 0, 0.7071067 ) );
-//    spherePoint1.push_back( Point3f( -1, 0, 0 ) );
-//    spherePoint2.push_back( Point3f( -0.7071067, 0, -0.7071067 ) );
-//    spherePoint1.push_back( Point3f( -0.7071067, 0, -0.7071067 ) );
-//    spherePoint2.push_back( Point3f( 0, 0, -1 ) );
-
+    spherePoint1.push_back( Point3f( 0.7071067, 0, 0.7071067 ) );
+    spherePoint2.push_back( Point3f( 0, 0, 1 ) );
+    spherePoint1.push_back( Point3f( 0, 0, 1 ) );
+    spherePoint2.push_back( Point3f( -0.7071067, 0, 0.7071067 ) );
+    spherePoint1.push_back( Point3f( -1, 0, 0 ) );
+    spherePoint2.push_back( Point3f( -0.7071067, 0, -0.7071067 ) );
+    spherePoint1.push_back( Point3f( -0.7071067, 0, -0.7071067 ) );
+    spherePoint2.push_back( Point3f( 0, 0, -1 ) );
         Mat estimateMat;
         vector<uchar> outliers;
-        estimateAffine3D( spherePoint1, spherePoint2, estimateMat, outliers, 2.0, 0.8 );
-        cout << estimateMat << "\n";
-        cout << outliers.size()  << "\n";
+        int ret = estimateAffine3D( spherePoint1, spherePoint2, estimateMat, outliers, 2.0, 0.8 );
+        estimateMat.at<double>(1,1) = 1.0;
+        cout << estimateMat << endl;
+        cout << ret << endl;
+        cout << outliers.size()  << endl;
+
+        if ( ret == 1 ) {
+            double qx, qy, qz, qw;
+            transformRotMatToQuaternion(qx, qy, qz, qw, estimateMat);
+            cout << counter << "," << qx << "," << qy << "," << qz << "," << qw << endl;
+        } else {
+            cout << counter << ",*,*,*,*" <<endl;
+        }
 
 //        Mat res;
 //        drawMatches(prev, inliers1, curr, inliers2, good_matches, res);
 //        imwrite("res.png", res);
 
-        double inlier_ratio = inliers1.size() * 1.0 / matched1.size();
-        cout << "A-KAZE Matching Results" << endl;
-        cout << "*******************************" << endl;
-        cout << "# Keypoints 1:                        \t" << kpts1.size() << endl;
-        cout << "# Keypoints 2:                        \t" << kpts2.size() << endl;
-        cout << "# Matches:                            \t" << matched1.size() << endl;
-        cout << "# Inliers:                            \t" << inliers1.size() << endl;
-        cout << "# Inliers Ratio:                      \t" << inlier_ratio << endl;
-        cout << endl;
+//        double inlier_ratio = inliers1.size() * 1.0 / matched1.size();
+//        cout << "A-KAZE Matching Results" << endl;
+//        cout << "*******************************" << endl;
+//        cout << "# Keypoints 1:                        \t" << kpts1.size() << endl;
+//        cout << "# Keypoints 2:                        \t" << kpts2.size() << endl;
+//        cout << "# Matches:                            \t" << matched1.size() << endl;
+//        cout << "# Inliers:                            \t" << inliers1.size() << endl;
+//        cout << "# Inliers Ratio:                      \t" << inlier_ratio << endl;
+//        cout << endl;
 
 		// 前のフレームを保存
 		prev = curr;
+        counter++;
     }
 
     return 0;
