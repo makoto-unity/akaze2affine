@@ -17,10 +17,10 @@ static Point3f getSpherePoint( Point2f pt )
 {
     Point3f pnt1;
     double theta = pt.x / (double)w * M_PI * 2.0f;
-    double phai  = pt.y / (double)h * M_PI;
-    pnt1.x = sin( phai ) * cos( theta );
-    pnt1.y = cos( phai );
-    pnt1.z = sin( phai ) * sin( theta );
+    double phai  = ((double)h*0.5 - pt.y) / (double)h * M_PI;
+    pnt1.x = cos( phai ) * cos( theta );
+    pnt1.y = sin( phai );
+    pnt1.z = cos( phai ) * sin( theta );
     return pnt1;
 }
 
@@ -136,21 +136,30 @@ int main(int argc, char** argv )
 //    Mat img1 = imread("graf1.png", IMREAD_GRAYSCALE);
 //    Mat img2 = imread("graf3.png", IMREAD_GRAYSCALE);
 	Mat prev;
-    VideoCapture capture = VideoCapture(argv[1]);
 
-    int counter = std::atoi(argv[3]);
+    std::string filePath = argv[1];
+    //VideoCapture capture = VideoCapture(argv[1]);
 
-    if ( counter > 0 ) {
-        for( int i = 0; i<counter ; i++ ) {
+    int fromId = std::atoi(argv[2]);
+    int toId   = std::atoi(argv[3]);
+
+/*
+    if ( fromId > 0 ) {
+        for( int i = 0; i<fromId ; i++ ) {
             capture >> prev;
         }
     } else {
         cout << "0,0,0,0,1" << endl;
         capture >> prev;
     }
+*/
+    char charId0[20];
+    sprintf(charId0, "%05d", fromId);
+    string strId0(charId0);
+    std::string fileName0 = filePath + strId0 + ".tif";
+	prev = cv::imread( fileName0, 1 );
 
-    // 前のフレームを保存しておく
-    inlier_threshold = std::atof( argv[2] );
+    inlier_threshold = std::atof( argv[4] );
 
     cv::Size imgSz = prev.size();
     w = imgSz.width;
@@ -160,12 +169,19 @@ int main(int argc, char** argv )
     FileStorage fs("H1to3p.xml", FileStorage::READ);
     fs.getFirstTopLevelNode() >> homography;
 
-    while (waitKey(1) == -1) 
+    //while (waitKey(1) == -1) 
     //for( int i=0 ; i<10 ; i++ ) 
+    for( int i=fromId+1 ; i<=toId ; i++ )
     {
+        char charId[20];
+        sprintf(charId, "%05d", i);
+        string strId(charId);
+        std::string fileName = filePath + strId + ".tif";
+//        cout << fileName << endl;
         // 現在のフレームを保存
 		Mat curr;
-		capture >> curr;
+        curr = cv::imread( fileName, 1 );
+		//capture >> curr;
 
         vector<KeyPoint> kpts1, kpts2;
         Mat desc1, desc2;
@@ -190,6 +206,16 @@ int main(int argc, char** argv )
                 matched2.push_back(kpts2[first.trainIdx]);
             }
         }
+
+        std::vector< cv::Vec2f > points1( matched1.size());
+        std::vector< cv::Vec2f > points2( matched1.size());
+        for(unsigned i = 0; i < matched1.size(); i++) {
+            points1[i][0] = matched1[i].pt.x;
+            points1[i][1] = matched1[i].pt.y;
+            points2[i][0] = matched2[i].pt.x;
+            points2[i][1] = matched2[i].pt.y;
+        }
+        homography = cv::findHomography( points1, points2, cv::RANSAC, 5.0);	
 
         for(unsigned i = 0; i < matched1.size(); i++) {
             Mat col = Mat::ones(3, 1, CV_64F);
@@ -220,21 +246,26 @@ int main(int argc, char** argv )
   0.9559639913966587, -0.1512785456133775, 0.008659000430174126, -0.03115525448941475;
   0.1213505258011772, 0.9521654706553296, 0.1884811247447123, -0.02286234084694982;
   -0.02882466337354708, -0.191771707675626, 0.9698523604117755, 0.003293610165961219
-  mat.m00 = 0.9559639913966587f;
-  mat.m01 =  0.1213505258011772f;
-  mat.m02 =  -0.02882466337354708f;
+
+0.9168613690158312, 0.215071121623276, -0.3278535119975714, 0.002336346562723357;
+ -0.2419376892706289, 0.9616379242346873, 0.05016308679857526, -0.03482866848896454;
+ 0.305011184524675, 0.04027020491171077, 0.9560339475879948, -0.01581409040900132
+
+  mat.m00 = 0.9168613690158312f;
+  mat.m01 = -0.2419376892706289f;
+  mat.m02 = 0.305011184524675f;
   mat.m03 = 0.0f;
-  mat.m10 = -0.1512785456133775f;
-  mat.m11 = 0.9521654706553296f;
-  mat.m12 = -0.191771707675626f;
+  mat.m10 = 0.215071121623276f;
+  mat.m11 = 0.9616379242346873f;
+  mat.m12 = 0.04027020491171077f;
   mat.m13 = 0.0f;
-  mat.m20 = 0.008659000430174126;
-  mat.m21 = 0.1884811247447123;
-  mat.m22 = 0.9698523604117755;
+  mat.m20 = -0.3278535119975714f;
+  mat.m21 = 0.05016308679857526f;
+  mat.m22 = 0.9560339475879948f;
   mat.m23 = 0.0f;
-  mat.m30 =  -0.03115525448941475f;
-  mat.m31 =  -0.02286234084694982f;
-  mat.m32 =  0.00329361016596121f;
+  mat.m30 = 0.002336346562723357f;
+  mat.m31 = -0.03482866848896454f;
+  mat.m32 = -0.01581409040900132f;
   mat.m33 = 1.0f;
 */
 /*
@@ -258,9 +289,9 @@ int main(int argc, char** argv )
         if ( ret == 1 ) {
             double qx, qy, qz, qw;
             transformRotMatToQuaternion(qx, qy, qz, qw, estimateMat);
-            cout << counter << "," << qx << "," << qy << "," << qz << "," << qw << endl;
+            cout << i << "," << qx << "," << qy << "," << -qz << "," << qw << endl;
         } else {
-            cout << counter << ",*,*,*,*" <<endl;
+            cout << i << ",*,*,*,*" <<endl;
         }
 
 //        Mat res;
@@ -279,7 +310,6 @@ int main(int argc, char** argv )
 
 		// 前のフレームを保存
 		prev = curr;
-        counter++;
     }
 
     return 0;
