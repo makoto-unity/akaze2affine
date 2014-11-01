@@ -137,8 +137,19 @@ int main(int argc, char** argv )
 //    Mat img2 = imread("graf3.png", IMREAD_GRAYSCALE);
 	Mat prev;
     VideoCapture capture = VideoCapture(argv[1]);
+
+    int counter = std::atoi(argv[3]);
+
+    if ( counter > 0 ) {
+        for( int i = 0; i<counter ; i++ ) {
+            capture >> prev;
+        }
+    } else {
+        cout << "0,0,0,0,1" << endl;
+        capture >> prev;
+    }
+
     // 前のフレームを保存しておく
-	capture >> prev;
     inlier_threshold = std::atof( argv[2] );
 
     cv::Size imgSz = prev.size();
@@ -148,21 +159,6 @@ int main(int argc, char** argv )
     Mat homography;
     FileStorage fs("H1to3p.xml", FileStorage::READ);
     fs.getFirstTopLevelNode() >> homography;
-
-    int counter = 1;
-
-    /*
-    for( int i=0 ; i<818 ; i++ ) 
-    {
-        // 現在のフレームを保存
-		Mat curr;
-		capture >> curr;
-        prev = curr;
-        counter++;
-     }
-*/
-
-    cout << "0,0,0,0,1" << endl;
 
     while (waitKey(1) == -1) 
     //for( int i=0 ; i<10 ; i++ ) 
@@ -241,6 +237,7 @@ int main(int argc, char** argv )
   mat.m32 =  0.00329361016596121f;
   mat.m33 = 1.0f;
 */
+/*
     spherePoint1.push_back( Point3f( 0.7071067, 0, 0.7071067 ) );
     spherePoint2.push_back( Point3f( 0, 0, 1 ) );
     spherePoint1.push_back( Point3f( 0, 0, 1 ) );
@@ -249,13 +246,14 @@ int main(int argc, char** argv )
     spherePoint2.push_back( Point3f( -0.7071067, 0, -0.7071067 ) );
     spherePoint1.push_back( Point3f( -0.7071067, 0, -0.7071067 ) );
     spherePoint2.push_back( Point3f( 0, 0, -1 ) );
+*/
         Mat estimateMat;
         vector<uchar> outliers;
         int ret = estimateAffine3D( spherePoint1, spherePoint2, estimateMat, outliers, 2.0, 0.8 );
-        estimateMat.at<double>(1,1) = 1.0;
-        cout << estimateMat << endl;
-        cout << ret << endl;
-        cout << outliers.size()  << endl;
+//        estimateMat.at<double>(1,1) = 1.0;
+//        cout << estimateMat << endl;
+//        cout << ret << endl;
+//        cout << outliers.size()  << endl;
 
         if ( ret == 1 ) {
             double qx, qy, qz, qw;
