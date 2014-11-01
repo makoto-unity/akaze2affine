@@ -180,7 +180,7 @@ int main(int argc, char** argv )
 //        cout << fileName << endl;
         // 現在のフレームを保存
 		Mat curr;
-        curr = cv::imread( fileName, 1 );
+        curr = cv::imread( fileName, IMREAD_GRAYSCALE );
 		//capture >> curr;
 
         vector<KeyPoint> kpts1, kpts2;
@@ -215,7 +215,7 @@ int main(int argc, char** argv )
             points2[i][0] = matched2[i].pt.x;
             points2[i][1] = matched2[i].pt.y;
         }
-        homography = cv::findHomography( points1, points2, cv::RANSAC, 5.0);	
+        homography = cv::findHomography( points1, points2, 0, 5.0);
 
         for(unsigned i = 0; i < matched1.size(); i++) {
             Mat col = Mat::ones(3, 1, CV_64F);
