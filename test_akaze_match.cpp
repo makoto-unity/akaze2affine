@@ -278,18 +278,22 @@ int main(int argc, char** argv )
     spherePoint1.push_back( Point3f( -0.7071067, 0, -0.7071067 ) );
     spherePoint2.push_back( Point3f( 0, 0, -1 ) );
 */
-        Mat estimateMat;
-        vector<uchar> outliers;
-        int ret = estimateAffine3D( spherePoint1, spherePoint2, estimateMat, outliers, 2.0, 0.8 );
+        if ( spherePoint1.size() > 0 ) {
+            Mat estimateMat;
+            vector<uchar> outliers;
+            int ret = estimateAffine3D( spherePoint1, spherePoint2, estimateMat, outliers, 2.0, 0.8 );
 //        estimateMat.at<double>(1,1) = 1.0;
 //        cout << estimateMat << endl;
 //        cout << ret << endl;
 //        cout << outliers.size()  << endl;
 
-        if ( ret == 1 ) {
-            double qx, qy, qz, qw;
-            transformRotMatToQuaternion(qx, qy, qz, qw, estimateMat);
-            cout << i << "," << qx << "," << qy << "," << -qz << "," << qw << endl;
+            if ( ret == 1 ) {
+                double qx, qy, qz, qw;
+                transformRotMatToQuaternion(qx, qy, qz, qw, estimateMat);
+                cout << i << "," << qx << "," << qy << "," << -qz << "," << qw << endl;
+            } else {
+                cout << i << ",*,*,*,*" <<endl;
+            }
         } else {
             cout << i << ",*,*,*,*" <<endl;
         }
