@@ -8,7 +8,8 @@
 using namespace std;
 using namespace cv;
 
-static float inlier_threshold = 2.5f; // Distance threshold to identify inliers
+static float param4 = 2.5f; // Distance threshold to identify inliers
+static float param5 = 10.0f;
 const float nn_match_ratio = 0.8f;   // Nearest neighbor matching ratio
 static int w;
 static int h;
@@ -157,9 +158,10 @@ int main(int argc, char** argv )
     sprintf(charId0, "%05d", fromId);
     string strId0(charId0);
     std::string fileName0 = filePath + strId0 + ".tif";
-	prev = cv::imread( fileName0, 1 );
+	prev = cv::imread( fileName0, IMREAD_GRAYSCALE );
 
-    inlier_threshold = std::atof( argv[4] );
+    param4 = std::atof( argv[4] );
+    param5 = std::atof( argv[5] );
 
     cv::Size imgSz = prev.size();
     w = imgSz.width;
@@ -183,6 +185,7 @@ int main(int argc, char** argv )
         curr = cv::imread( fileName, IMREAD_GRAYSCALE );
 		//capture >> curr;
 
+/*
         vector<KeyPoint> kpts1, kpts2;
         Mat desc1, desc2;
 
@@ -227,7 +230,7 @@ int main(int argc, char** argv )
             double dist = sqrt( pow(col.at<double>(0) - matched2[i].pt.x, 2) +
                                 pow(col.at<double>(1) - matched2[i].pt.y, 2));
 
-            if(dist < inlier_threshold) {
+            if(dist < param4) {
                 int new_i = static_cast<int>(inliers1.size());
                 inliers1.push_back(matched1[i]);
                 inliers2.push_back(matched2[i]);
@@ -242,7 +245,45 @@ int main(int argc, char** argv )
             spherePoint1.push_back( pnt1 );
             spherePoint2.push_back( pnt2 );
         }
-/*
+*/
+        // Gunnar Farnebackのアルゴリズムに基づくオプティカルフロー
+        // 画像ピラミッド作成のスケール(<1)，ピラミッドの層数，
+        // 平均化窓サイズ，各層での繰り返し数，
+        // 各ピクセルの隣接領域サイズ．通常は 5 or 7，
+        // ガウシアンの標準偏差，フラグ
+        //cv::Mat flow;
+        //std::vector<float> error;
+        //cv::calcOpticalFlowFarneback(prev, curr, flow, 0.5, 3, 15, 3, 5, 1.1, 0);
+
+        std::vector<cv::Point2f> prev_pts;
+        std::vector<cv::Point2f> curr_pts;
+  
+        cv::goodFeaturesToTrack(prev, prev_pts, 1000, 0.01, 0.01);
+        cv::Mat status, error;
+        cv::calcOpticalFlowPyrLK(prev, curr, prev_pts, curr_pts, status, error);
+        vector<Point3f> spherePoint1, spherePoint2;
+
+        // オプティカルフローの表示
+        Mat resImg = cv::imread( fileName, 1 );
+
+        for(unsigned i = 0; i < prev_pts.size(); i++) {
+            int isOk = status.at<uchar>(i);
+            if ( isOk == 1 ) {
+                float err = error.at<float>(i);
+                if ( err < param5 ) {
+                    Point3f pnt1 = getSpherePoint( prev_pts[i] );
+                    Point3f pnt2 = getSpherePoint( curr_pts[i] );
+                    double res = cv::norm(pnt1-pnt2);
+                    if ( res < param4 ) {
+                        spherePoint1.push_back( pnt1 );
+                        spherePoint2.push_back( pnt2 );
+                        cv::line(resImg, prev_pts[i], curr_pts[i], cv::Scalar(255,err*5.0f,0),2);
+                    }
+                }
+            }
+        }
+        imwrite("res.png", resImg);
+  /*
   0.9559639913966587, -0.1512785456133775, 0.008659000430174126, -0.03115525448941475;
   0.1213505258011772, 0.9521654706553296, 0.1884811247447123, -0.02286234084694982;
   -0.02882466337354708, -0.191771707675626, 0.9698523604117755, 0.003293610165961219
@@ -281,10 +322,11 @@ int main(int argc, char** argv )
         if ( spherePoint1.size() > 0 ) {
             Mat estimateMat;
             vector<uchar> outliers;
-            int ret = estimateAffine3D( spherePoint1, spherePoint2, estimateMat, outliers, 2.0, 0.8 );
+            int ret = estimateAffine3D( spherePoint1, spherePoint2, estimateMat, outliers, 1.0, 0.99 );
 //        estimateMat.at<double>(1,1) = 1.0;
 //        cout << estimateMat << endl;
 //        cout << ret << endl;
+//        cout << spherePoint1.size()  << endl;
 //        cout << outliers.size()  << endl;
 
             if ( ret == 1 ) {
